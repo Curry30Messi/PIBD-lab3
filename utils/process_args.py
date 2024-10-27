@@ -54,6 +54,7 @@ def _process_args():
 
     #---> model related
     parser.add_argument('--method', type=str, default="PIBD", help='methd type')
+    parser.add_argument('--modality', type=str, choices=["Both", "G", "P"],default="Both", help='existing modality, designed for missing modality')
     parser.add_argument('--encoding_dim', type=int, default=768, help='WSI encoding dim (1024 for resnet50, 768 for swin)')
     parser.add_argument('--wsi_projection_dim', type=int, default=256, help="projection dim of features")
     parser.add_argument('--omics_format', type=str, default="pathways", choices=["gene","groups","pathways"], help='format of omics data')

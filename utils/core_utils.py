@@ -495,7 +495,7 @@ def _calculate_metrics(loader, dataset_factory, survival_train, all_risk_scores,
     return c_index, c_index_ipcw, BS, IBS, iauc
 
 
-def _summary(dataset_factory, model, omics_format, loader, loss_fn, survival_train=None):
+def _summary(args,dataset_factory, model, omics_format, loader, loss_fn, survival_train=None):
     r"""
     Run a validation loop on the trained model 
     
@@ -538,6 +538,12 @@ def _summary(dataset_factory, model, omics_format, loader, loss_fn, survival_tra
 
             data_WSI, mask, y_disc, event_time, censor, data_omics, clinical_data_list, mask = _unpack_data(omics_format, device, data)
 
+            if args.modality == "G":
+                data_WSI = torch.zeros_like(data_WSI)
+            elif args.modality == "P":
+                data_omics = torch.zeros_like(data_omics)
+            elif args.modality == "Both":
+                pass
             input_args = {"x_wsi": data_WSI.to(device)}
             input_args["return_attn"] = False
             input_args["y"] = None
@@ -639,7 +645,7 @@ def _step(cur, args, loss_fn, model, optimizer, train_loader, val_loader, log_fi
     
     for epoch in range(args.max_epochs):
         _train_loop_survival(args, epoch, model, args.omics_format, train_loader, optimizer, loss_fn, log_file)
-        results_dict, val_cindex, val_cindex_ipcw, val_BS, val_IBS, val_iauc, total_loss = _summary(args.dataset_factory,
+        results_dict, val_cindex, val_cindex_ipcw, val_BS, val_IBS, val_iauc, total_loss = _summary(args,args.dataset_factory,
         model, args.omics_format, val_loader, loss_fn, all_survival)
         print(
             'Epoch:{} Val c-index: {:.4f} | Final Val c-index2: {:.4f} | Final Val IBS: {:.4f} | Final Val iauc: {:.4f}'.format(
@@ -667,7 +673,7 @@ def _step(cur, args, loss_fn, model, optimizer, train_loader, val_loader, log_fi
     # save the trained model
     torch.save(model.state_dict(), os.path.join(args.results_dir, "s_{}_checkpoint.pth".format(cur)))
     
-    results_dict, val_cindex, val_cindex_ipcw, val_BS, val_IBS, val_iauc, total_loss = _summary(args.dataset_factory, model, args.omics_format, val_loader, loss_fn, all_survival)
+    results_dict, val_cindex, val_cindex_ipcw, val_BS, val_IBS, val_iauc, total_loss = _summary(args,args.dataset_factory, model, args.omics_format, val_loader, loss_fn, all_survival)
     
     print('Final Val c-index: {:.4f} | Final Val c-index2: {:.4f} | Final Val IBS: {:.4f} | Final Val iauc: {:.4f}'.format(
         val_cindex, 
@@ -684,7 +690,7 @@ def _step(cur, args, loss_fn, model, optimizer, train_loader, val_loader, log_fi
 
     best_model = torch.load(os.path.join(args.results_dir, "model_best_s{}.pth".format(cur)))
     model.load_state_dict(best_model)
-    _, val_cindex, val_cindex_ipcw, val_BS, val_IBS, val_iauc, total_loss = _summary(args.dataset_factory, model, args.omics_format, val_loader, loss_fn, all_survival)
+    _, val_cindex, val_cindex_ipcw, val_BS, val_IBS, val_iauc, total_loss = _summary(args,args.dataset_factory, model, args.omics_format, val_loader, loss_fn, all_survival)
     print('Best Val c-index: {:.4f} | Best Val c-index2: {:.4f} | Best Val IBS: {:.4f} | Best Val iauc: {:.4f}'.format(
         val_cindex,
         val_cindex_ipcw,
